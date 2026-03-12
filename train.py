@@ -3,8 +3,9 @@
 # Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553, 2009.
 
 import os
-import warnings
+import shutil
 import sys
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -14,6 +15,7 @@ from sklearn.linear_model import ElasticNet
 
 import mlflow
 import mlflow.sklearn
+from mlflow_local import MODEL_STAGING_DIR, PROJECT_ROOT, configure_runtime, configure_tracking
 
 
 def eval_metrics(actual, pred):
@@ -27,9 +29,11 @@ def eval_metrics(actual, pred):
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
     np.random.seed(40)
+    configure_runtime()
+    configure_tracking()
 
     # Read the wine-quality csv file (make sure you're running this from the root of MLflow!)
-    wine_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wine-quality.csv")
+    wine_path = os.path.join(str(PROJECT_ROOT), "wine-quality.csv")
     data = pd.read_csv(wine_path)
 
     # Split the data into training and test sets. (0.75, 0.25) split.
@@ -44,7 +48,7 @@ if __name__ == "__main__":
     alpha = float(sys.argv[1]) if len(sys.argv) > 1 else 0.5
     l1_ratio = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 
-    with mlflow.start_run():
+    with mlflow.start_run() as run:
         lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
         lr.fit(train_x, train_y)
 
@@ -63,4 +67,9 @@ if __name__ == "__main__":
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
-        mlflow.sklearn.log_model(lr, "model")
+        model_dir = os.path.join(MODEL_STAGING_DIR, run.info.run_id, "model")
+        if os.path.exists(model_dir):
+            shutil.rmtree(model_dir)
+        os.makedirs(os.path.dirname(model_dir), exist_ok=True)
+        mlflow.sklearn.save_model(lr, model_dir)
+        mlflow.log_artifacts(model_dir, artifact_path="model")

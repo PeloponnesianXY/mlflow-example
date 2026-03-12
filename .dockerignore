@@ -1,0 +1,9 @@
+.git
+.ipynb_checkpoints
+.matplotlib
+.runtime
+.venv
+__pycache__
+*.code-workspace
+*.ipynb
+data/
