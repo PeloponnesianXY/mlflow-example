@@ -9,7 +9,12 @@ import mlflow
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-RUNTIME_ROOT = PROJECT_ROOT / ".runtime"
+LOCAL_APPDATA = Path(
+    os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")
+)
+RUNTIME_ROOT = Path(
+    os.environ.get("DATA_SCIENCE_PROJECT_RUNTIME_DIR", LOCAL_APPDATA / "data-science-project")
+)
 TMP_DIR = RUNTIME_ROOT / "tmp"
 MODEL_STAGING_DIR = RUNTIME_ROOT / "model_staging"
 MLRUNS_DIR = PROJECT_ROOT / "mlruns"
